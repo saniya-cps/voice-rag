@@ -211,8 +211,8 @@ def process_interaction(audio_file, text_input, api_key_input, voice_enabled):
         import traceback
         err_trace = traceback.format_exc()
         print(f"[ERROR in process_interaction]: {err_trace}")
-        error_msg = f"**System Alert:** An error occurred while processing your request: {str(exc)}\n\nPlease ensure your audio is clear or verify your Gemini API key."
-        return error_msg, None, f"#### Exception Details\n`{str(exc)}`", f"```\n{err_trace}\n```"
+        error_msg = "**System Alert:** An error occurred while processing your request. Please ensure your audio is clear or verify your Gemini API key."
+        return error_msg, None, "*Request could not be completed.*", "*Check local server logs for details.*"
 
 
 # Pure CSS for NotebookLM Studio + Pookie / Girl Coder Aesthetic
@@ -975,9 +975,9 @@ with gr.Blocks(title="Voice-Enabled RAG System") as demo:
             with gr.Accordion("Studio Settings & API Key", open=False):
                 gr.HTML('<div class="field-label" style="font-size:0.85rem;">Gemini API Key</div>')
                 api_key_box = gr.Textbox(
-                    placeholder="Enter Gemini API key (or set in .env)",
+                    placeholder="Enter Gemini API key (or leave blank to use server .env)",
                     type="password",
-                    value=Config.GEMINI_API_KEY,
+                    value="",
                     show_label=False
                 )
                 voice_toggle = gr.Checkbox(label="Synthesize Voice Audio Response (TTS)", value=True)
@@ -1092,9 +1092,9 @@ def attach_github_pages_bridge(fastapi_app):
     from fastapi.responses import JSONResponse
 
     CORS_HEADERS = {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": "https://saniya-cps.github.io",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
         "Access-Control-Allow-Private-Network": "true",
     }
 

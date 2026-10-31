@@ -849,7 +849,8 @@
 
         function saveLocalApiKey() {
             const k = document.getElementById('api-key-box').value.trim();
-            if (k) localStorage.setItem('voice_rag_gemini_key', k);
+            localStorage.removeItem('voice_rag_gemini_key');
+            if (k) sessionStorage.setItem('voice_rag_gemini_key', k);
         }
 
         // Check if user's local Python server (http://127.0.0.1:7860) is running
@@ -1108,6 +1109,15 @@
             return all;
         }
 
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function refreshSourceUI() {
             const sourcesEl = document.getElementById('sources-display');
             const bannerEl = document.getElementById('notebook-banner');
@@ -1131,14 +1141,15 @@
 
             let html = `<div class="sources-list-header">Active Sources (${notebookSources.length}) &bull; ${totalChunks} Total Passages</div>`;
             notebookSources.forEach(s => {
-                const ftype = (s.file_type || 'DOC').replace('.', '').toUpperCase();
+                const ftype = escapeHtml((s.file_type || 'DOC').replace('.', '').toUpperCase());
+                const safeName = escapeHtml(s.name);
                 html += `
                     <div class="source-card">
                         <div class="source-card-info">
                             <span class="source-type-pill">${ftype}</span>
-                            <span class="source-card-name" title="${s.name}">${s.name}</span>
+                            <span class="source-card-name" title="${safeName}">${safeName}</span>
                         </div>
-                        <span class="source-card-badge">${s.num_chunks} Chunks</span>
+                        <span class="source-card-badge">${Number(s.num_chunks) || 0} Chunks</span>
                     </div>`;
             });
             sourcesEl.innerHTML = html;
@@ -1150,7 +1161,7 @@
                 </div>`;
 
             dropEl.innerHTML = `<option value="">Select Source to Remove...</option>` +
-                notebookSources.map(s => `<option value="${s.source_id}">${s.name} (${s.num_chunks} chunks)</option>`).join('');
+                notebookSources.map(s => `<option value="${escapeHtml(s.source_id)}">${escapeHtml(s.name)} (${Number(s.num_chunks) || 0} chunks)</option>`).join('');
         }
 
         // Hybrid Retrieval (Dense Character N-Gram + Token Cosine + BM25Okapi + RRF)
@@ -1413,7 +1424,7 @@
             const pipelineStart = performance.now();
             const isHindi = /[\u0900-\u097F]/.test(query);
             const lang = isHindi ? 'hi' : 'en';
-            const apiKey = document.getElementById('api-key-box').value.trim() || localStorage.getItem('voice_rag_gemini_key') || '';
+            const apiKey = document.getElementById('api-key-box').value.trim() || sessionStorage.getItem('voice_rag_gemini_key') || '';
             const voiceEnabled = document.getElementById('voice-toggle').checked;
 
             // Priority 1: If Local Machine Python server (app.py) is running, execute on Python backend!
@@ -1547,12 +1558,14 @@
                 return;
             }
             el.innerHTML = passages.map((p, i) => {
-                const sName = (p.metadata && p.metadata.source_name) || p.passage_id;
+                const sName = escapeHtml((p.metadata && p.metadata.source_name) || p.passage_id);
+                const safePid = escapeHtml(p.passage_id);
+                const safeText = escapeHtml(p.text);
                 return `
                     <div style="margin-bottom:0.85rem;">
-                        <strong>Source ${i + 1}: [${sName}]</strong> &bull; Chunk ID: <code>${p.passage_id}</code>
-                        (RRF: <code>${p.rrf_score.toFixed(4)}</code> | Dense Cosine: <code>${p.dense_score.toFixed(3)}</code> | BM25: <code>${p.bm25_score.toFixed(2)}</code>)
-                        <blockquote>${p.text}</blockquote>
+                        <strong>Source ${i + 1}: [${sName}]</strong> &bull; Chunk ID: <code>${safePid}</code>
+                        (RRF: <code>${Number(p.rrf_score).toFixed(4)}</code> | Dense Cosine: <code>${Number(p.dense_score).toFixed(3)}</code> | BM25: <code>${Number(p.bm25_score).toFixed(2)}</code>)
+                        <blockquote>${safeText}</blockquote>
                     </div>`;
             }).join('');
         }
@@ -1560,7 +1573,8 @@
         window.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('voice_rag_theme') || 'dark';
             applyTheme(savedTheme);
-            const savedKey = localStorage.getItem('voice_rag_gemini_key') || '';
+            localStorage.removeItem('voice_rag_gemini_key');
+            const savedKey = sessionStorage.getItem('voice_rag_gemini_key') || '';
             if (savedKey) document.getElementById('api-key-box').value = savedKey;
             refreshSourceUI();
             checkLocalMachineBackend();

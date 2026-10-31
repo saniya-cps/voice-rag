@@ -19,6 +19,10 @@ __pycache__/
 data/*.bin
 data/*.json
 
+# Local Scripts & Personal Notes
+Presentation_Scripts*
+deploy_to_github.bat
+
 # OS & Editor files
 .DS_Store
 Thumbs.db
